@@ -38,52 +38,51 @@ def track_label(img, track_id, ltrb):
 
 
 def main():
-    video = torchvision.io.VideoReader(video_path, stream="video")
-    frame = next(video)
-    _, frame_height, frame_width = frame["data"].shape
-    fps = video.get_metadata()["video"]["fps"][0]
+    cap = cv2.VideoCapture(video_path)
+    if (cap.isOpened() == False):
+        print("Error opening video stream or file")
 
-    out = cv2.VideoWriter(
-        "videos/Traffic_output.avi",
-        cv2.VideoWriter_fourcc("M", "J", "P", "G"),
-        fps,
-        (frame_width, frame_height),
-    )
+    # Read until video is completed
+    while (cap.isOpened()):
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+        if ret == False:
+            break
+        else:
+            results = object_detector([frame])
+            print(results.names)
+            # break
+            im = results.ims[0]
+            list_xyxy = results.xyxy[0][results.xyxy[0][:, -1] == CAR_INDEX].tolist()
 
-    video.seek(0)
-    for frame in video:
-        results = object_detector([frame["data"].numpy()])
-        im = results.ims[0]
-        list_xyxy = results.xyxy[0][results.xyxy[0][:, -1] == CAR_INDEX].tolist()
-
-        detections = []
-        for xyxy in list_xyxy:
-            detections.append(
-                (
-                    [xyxy[0], xyxy[1], xyxy[2] - xyxy[0], xyxy[3] - xyxy[1]],
-                    xyxy[4],
-                    xyxy[5],
+            detections = []
+            for xyxy in list_xyxy:
+                detections.append(
+                    (
+                        [xyxy[0], xyxy[1], xyxy[2] - xyxy[0], xyxy[3] - xyxy[1]],
+                        xyxy[4],
+                        xyxy[5],
+                    )
                 )
+
+            tracks = tracker.update_tracks(detections, frame=im)
+            count_confirmed = 0
+            for track in tracks:
+                if not track.is_confirmed():
+                    continue
+                track_id = track.track_id
+                ltrb = track.to_ltrb()
+                im = track_label(im, track_id, ltrb)
+                count_confirmed += 1
+
+            # Publish message
+            publish.single(
+                topic, f"Number of car: {count_confirmed}", hostname=hostname, port=port
             )
-
-        tracks = tracker.update_tracks(detections, frame=im)
-        count_confirmed = 0
-        for track in tracks:
-            if not track.is_confirmed():
-                continue
-            track_id = track.track_id
-            ltrb = track.to_ltrb()
-            im = track_label(im, track_id, ltrb)
-            count_confirmed += 1
-        publish.single(
-            topic, f"Number of car: {count_confirmed}", hostname=hostname, port=port
-        )
-        out.write(im)
-
-        resized = cv2.resize(im, (int(im.shape[1]/3*2), int(im.shape[0]/3*2)), interpolation=cv2.INTER_AREA)
-        # cv2.imshow("Video", resized)
-        # cv2.waitKey(1)
-    out.release()
+            resized = cv2.resize(im, (int(im.shape[1]/3*2), int(im.shape[0]/3*2)), interpolation=cv2.INTER_AREA)
+            cv2.imshow("Video", resized)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
 
 if __name__ == "__main__":
