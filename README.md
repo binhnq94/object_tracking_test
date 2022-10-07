@@ -3,5 +3,6 @@
 How to install:
 
 ```
-pip install -r requirements-yolov5.txt
+conda install pytorch torchvision cpuonly -c pytorch
+pip install -r requirements.txt
 ```

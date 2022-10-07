@@ -1,0 +1,3 @@
+-r requirements-yolov5.txt
+deep_sort_realtime
+paho-mqtt
