@@ -13,3 +13,14 @@ How to train:
 python yolov5/train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt --cache
 ```
 
+Run MQTT client:
+
+```commandline
+python mqtt_client.py
+```
+
+Run object tracking:
+
+```commandline
+ python tracking.py videos/Traffic.mp4
+```
