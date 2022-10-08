@@ -3,7 +3,7 @@
 How to install:
 
 ```commandline
-conda install pytorch torchvision cpuonly -c pytorch
+conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
 pip install -r requirements.txt
 ```
 
