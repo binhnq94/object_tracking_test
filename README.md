@@ -3,6 +3,10 @@
 How to install:
 
 ```commandline
+git clone git@github.com:binhnq94/object_tracking_test.git
+git submodule init 
+git submodule update
+
 conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
 pip install -r requirements.txt
 ```
