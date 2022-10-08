@@ -10,7 +10,7 @@ import paho.mqtt.publish as publish
 
 object_detector = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
 tracker = DeepSort(max_age=10)
-video_path = os.path.join("videos/Traffic.mp4")
+# video_path = os.path.join("videos/Traffic.mp4")
 
 CAR_INDEX = 2
 
@@ -37,21 +37,21 @@ def track_label(img, track_id, ltrb):
     return img
 
 
-def main():
+def main(video_path):
     cap = cv2.VideoCapture(video_path)
     if (cap.isOpened() == False):
         print("Error opening video stream or file")
 
+    frame_count = 0
     # Read until video is completed
     while (cap.isOpened()):
+        frame_count += 1
         # Capture frame-by-frame
         ret, frame = cap.read()
         if ret == False:
             break
         else:
             results = object_detector([frame])
-            print(results.names)
-            # break
             im = results.ims[0]
             list_xyxy = results.xyxy[0][results.xyxy[0][:, -1] == CAR_INDEX].tolist()
 
@@ -80,10 +80,12 @@ def main():
                 topic, f"Number of car: {count_confirmed}", hostname=hostname, port=port
             )
             resized = cv2.resize(im, (int(im.shape[1]/3*2), int(im.shape[0]/3*2)), interpolation=cv2.INTER_AREA)
-            cv2.imshow("Video", resized)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            if frame_count % 2 == 0:
+                cv2.imshow("Video", resized)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(sys.argv[1])
